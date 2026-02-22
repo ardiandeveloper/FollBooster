@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembayaran QRIS - TravelEase</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0064D2;
+            --accent: #FF5E1F;
+            --bg: #F4F7FA;
+            --white: #ffffff;
+            --text-main: #1A1A1A;
+            --text-sub: #707070;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); display: flex; justify-content: center; }
+
+        .app-container {
+            width: 100%;
+            max-width: 510px;
+            background: var(--bg);
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--white);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .header h1 { font-size: 18px; font-weight: 800; }
+
+        .content { padding: 20px; text-align: center; }
+
+        /* QR Container */
+        .qr-card {
+            background: var(--white);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .qris-logo {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+
+        .qr-frame {
+            width: 220px;
+            height: 220px;
+            background: #fff;
+            border: 8px solid #f8f8f8;
+            border-radius: 15px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Placeholder QR Code (Menggunakan API QR gratis) */
+        .qr-frame img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .price-display {
+            margin-top: 10px;
+        }
+        .price-display p { font-size: 12px; color: var(--text-sub); text-transform: uppercase; font-weight: 700; }
+        .price-display h2 { font-size: 30px; color: var(--text-main); font-weight: 900; }
+
+        /* Info Section */
+        .instruction-card {
+            background: #EBF4FF;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: left;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .instruction-card i { color: var(--primary); font-size: 18px; margin-top: 2px; }
+        .instruction-card p { font-size: 13px; color: #444; line-height: 1.5; }
+
+        .timer-box {
+            color: var(--accent);
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* Actions */
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+        }
+        .btn-download { background: var(--primary); color: white; }
+        .btn-check { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-action:active { transform: scale(0.98); }
+
+        /* Loader for checking status */
+        #status-loader { display: none; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <a href="javascript:history.back()" style="color: #333;"><i class="fas fa-arrow-left"></i></a>
+        <h1>Pembayaran QRIS</h1>
+    </div>
+
+    <div class="content">
+        <div class="timer-box">
+            <i class="far fa-clock"></i> Bayar dalam <span id="countdown">15:00</span>
+        </div>
+
+        <div class="qr-card">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="qris-logo" alt="QRIS">
+            
+            <div class="qr-frame">
+                <img id="qr-image" src="https://files.catbox.moe/3bt7qt.jpg" alt="QR Code">
+            </div>
+
+            <div class="price-display">
+                <p>Total Tagihan</p>
+                <h2 id="grand-total">Rp0</h2>
+            </div>
+        </div>
+
+        <div class="instruction-card">
+            <i class="fas fa-info-circle"></i>
+            <p>Screenshot halaman ini atau simpan QR, lalu buka aplikasi e-wallet (GoPay, OVO, Dana) atau Mobile Banking Anda untuk scan.</p>
+        </div>
+
+        <button class="btn-action btn-download" onclick="downloadQR()">
+            <i class="fas fa-download"></i> Simpan Kode QR
+        </button>
+
+        <button class="btn-action btn-check" onclick="checkStatus()">
+            <span id="btn-text">Cek Status Pembayaran</span>
+            <i class="fas fa-spinner fa-spin" id="status-loader"></i>
+        </button>
+
+        <p style="font-size: 11px; color: var(--text-sub); margin-top: 15px;">
+            Order ID: <span id="order-id">TRX-7728190</span>
+        </p>
+    </div>
+</div>
+
+<script>
+    function loadQRData() {
+        const product = localStorage.getItem('selected_product') || "Top Up";
+        const price = parseInt(localStorage.getItem('total_price')) || 0;
+        const total = price + 1000;
+        
+        // Update UI
+        document.getElementById('grand-total').innerText = "Rp" + total.toLocaleString('id-ID');
+        
+        // Opsional: Update QR Data agar unik
+        const qrImg = document.getElementById('qr-image');
+        qrImg.src = `https://files.catbox.moe/3bt7qt.jpg`;
+    }
+
+    // Simulasi Cek Status
+    function checkStatus() {
+        const loader = document.getElementById('status-loader');
+        const btnText = document.getElementById('btn-text');
+        
+        loader.style.display = 'inline-block';
+        btnText.innerText = 'Mengecek...';
+
+        setTimeout(() => {
+            // Simulasi pembayaran berhasil setelah 2 detik
+            window.location.href = 'easepay.html'; 
+        }, 2000);
+    }
+
+    function downloadQR() {
+        alert("Kode QR telah disimpan ke galeri ponsel Anda.");
+    }
+
+    // Timer Mundur
+    let time = 900;
+    setInterval(() => {
+        let m = Math.floor(time/60);
+        let s = time%60;
+        document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        if(time > 0) time--;
+    }, 1000);
+
+    window.onload = loadQRData;
+</script>
+
+</body>
+</html>

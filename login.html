@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | FollBooster Dashboard</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --sub-text: #64748b;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- UI ALERT CUSTOM --- */
+        #customAlert {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            width: 90%; max-width: 350px; background: white; padding: 15px 20px;
+            border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 12px; z-index: 9999;
+            transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            border-left: 5px solid var(--primary);
+        }
+        #customAlert.show { transform: translateX(-50%) translateY(0); }
+
+        /* --- LOGIN CARD --- */
+        .login-card {
+            background: white;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 30px;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+            text-align: center;
+        }
+
+        .logo-area {
+            margin-bottom: 30px;
+        }
+        .logo-icon {
+            width: 50px; height: 50px; background: var(--primary);
+            color: white; border-radius: 15px; display: flex;
+            align-items: center; justify-content: center; font-size: 1.5rem;
+            margin: 0 auto 15px;
+        }
+        .login-card h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+        .login-card p { font-size: 0.9rem; color: var(--sub-text); margin-bottom: 30px; }
+
+        /* --- FORM STYLING --- */
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block; font-size: 13px; font-weight: 700;
+            margin-bottom: 8px; margin-left: 5px; color: var(--text);
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-wrapper i {
+            position: absolute; left: 15px; color: var(--sub-text); font-size: 14px;
+        }
+        .input-wrapper input {
+            width: 100%; padding: 14px 15px 14px 45px;
+            border-radius: 15px; border: 1px solid #e2e8f0;
+            background: #f8fafc; outline: none; transition: 0.3s;
+            font-size: 14px;
+        }
+        .input-wrapper input:focus {
+            border-color: var(--primary); background: white;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .options {
+            display: flex; justify-content: space-between;
+            align-items: center; font-size: 12px; margin-bottom: 25px;
+        }
+        .remember-me { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .remember-me input { cursor: pointer; accent-color: var(--primary); }
+        .forgot-pw { color: var(--primary); font-weight: 700; text-decoration: none; }
+
+        .btn-login {
+            width: 100%; padding: 15px; background: var(--primary);
+            color: white; border-radius: 15px; border: none;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            transition: 0.3s; margin-bottom: 20px;
+        }
+        .btn-login:hover { background: #4338ca; transform: translateY(-2px); }
+
+        .footer-text { font-size: 13px; color: var(--sub-text); }
+        .footer-text a { color: var(--primary); font-weight: 700; text-decoration: none; }
+
+        /* Back to Home Button */
+        .back-home {
+            margin-top: 20px; display: inline-flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--sub-text); text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="customAlert">
+        <i class="fa-solid fa-circle-check" style="color: var(--primary);"></i>
+        <div id="alertText" style="font-size: 12px; font-weight: 600;">Berhasil Login!</div>
+    </div>
+
+    <div class="login-card">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-bolt"></i></div>
+            <h2>Selamat Datang</h2>
+            <p>Masuk ke akun FollBooster Anda</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email / Username</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="text" id="email" placeholder="Masukkan email..." required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <div class="options">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe" checked> Ingat Saya
+                </label>
+                <a href="lupa-password.html" class="forgot-pw">Lupa Password?</a>
+            </div>
+
+            <button type="submit" class="btn-login">Masuk Sekarang</button>
+        </form>
+
+        <div class="footer-text">
+            Belum punya akun? <a href="signup.html">Daftar Gratis</a>
+        </div>
+
+        <a href="index.html" class="back-home">
+            <i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda
+        </a>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passInput = document.getElementById('password');
+        const rememberCheckbox = document.getElementById('rememberMe');
+
+        // FUNGSI TERSIMPAN OTOMATIS (Cek LocalStorage saat halaman dibuka)
+        window.onload = () => {
+            const savedEmail = localStorage.getItem('savedEmail');
+            const savedPass = localStorage.getItem('savedPass');
+
+            if (savedEmail && savedPass) {
+                emailInput.value = savedEmail;
+                passInput.value = savedPass;
+                showAlert("Data login terisi otomatis!");
+            }
+        };
+
+        // FUNGSI ALERT UI
+        function showAlert(msg) {
+            const alertBox = document.getElementById('customAlert');
+            document.getElementById('alertText').innerText = msg;
+            alertBox.classList.add('show');
+            setTimeout(() => alertBox.classList.remove('show'), 3000);
+        }
+
+        // LOGIKA LOGIN
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Simpan otomatis jika checkbox dicentang
+            if (rememberCheckbox.checked) {
+                localStorage.setItem('savedEmail', emailInput.value);
+                localStorage.setItem('savedPass', passInput.value);
+            } else {
+                localStorage.removeItem('savedEmail');
+                localStorage.removeItem('savedPass');
+            }
+
+            showAlert("Login Berhasil! Mengalihkan...");
+            
+            // Simulasi pindah ke dashboard setelah login
+            setTimeout(() => {
+                window.location.href = 'dashboard.html'; 
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

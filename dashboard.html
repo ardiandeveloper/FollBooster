@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FollBooster Official</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --gold: #f59e0b;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --sub-text: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+
+        /* --- NAV & HAMBURGER --- */
+        nav {
+            background: white; padding: 15px 20px; display: flex; 
+            justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .menu-toggle { font-size: 1.2rem; cursor: pointer; color: var(--text); }
+        .logo { font-weight: 800; color: var(--primary); }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+            background: white; z-index: 2000; transition: 0.3s; padding: 30px 20px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+        }
+        .sidebar.active { left: 0; }
+        .sidebar-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+            display: none; z-index: 1500; backdrop-filter: blur(4px);
+        }
+        .sidebar-overlay.active { display: block; }
+        .sidebar-item { 
+            padding: 15px; display: flex; align-items: center; gap: 12px; 
+            font-weight: 600; color: var(--sub-text); border-radius: 12px; margin-bottom: 5px; text-decoration: none;
+        }
+        .sidebar-item:hover { background: #f1f5f9; color: var(--primary); }
+
+        /* --- ROLE STYLING --- */
+        .role-badge {
+            display: flex; align-items: center; gap: 8px; padding: 8px 15px;
+            border-radius: 50px; font-size: 11px; font-weight: 800; cursor: pointer;
+            transition: 0.3s;
+        }
+        .role-free { background: #f1f5f9; color: var(--sub-text); }
+        /* TAMPILAN PRO / UPGRADED */
+        .role-pro { background: #fffbeb; color: #b45309; border: 2px solid #fbce03; box-shadow: 0 0 10px rgba(251, 206, 3, 0.2); }
+        .role-pro i { color: var(--gold); }
+
+        /* --- MAIN CONTENT --- */
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .card { background: white; padding: 25px; border-radius: 24px; margin-bottom: 20px; border: 1px solid #f1f5f9; }
+        .card h3 { font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+
+        select, input {
+            width: 100%; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0;
+            background: #f8fafc; outline: none; margin-bottom: 15px; font-size: 14px;
+        }
+        .warning-box {
+            background: #fff7ed; border-radius: 12px; padding: 15px; border-left: 4px solid #f97316;
+            font-size: 11px; color: #9a3412; line-height: 1.6; margin-bottom: 20px;
+        }
+
+        .btn-send {
+            width: 100%; padding: 16px; background: var(--primary); color: white;
+            border-radius: 15px; border: none; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .loading-spinner {
+            display: none; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .status-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .status-table th { text-align: left; padding: 10px; color: var(--sub-text); border-bottom: 1px solid #f1f5f9; }
+        .status-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-process { background: #eff6ff; color: #1e40af; }
+
+        /* POPUP SUCCESS */
+        .popup-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
+            display: none; align-items: center; justify-content: center; z-index: 3000; padding: 25px;
+            backdrop-filter: blur(4px);
+        }
+        .popup-card { background: white; padding: 30px; border-radius: 30px; text-align: center; max-width: 350px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar-overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div class="sidebar" id="sidebar">
+        <h2 style="margin-bottom: 30px; color: var(--primary);">Dashboard</h2>
+        <a href="#" class="sidebar-item"><i class="fa-solid fa-house"></i> Beranda</a>
+        <a href="#" class="sidebar-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</a>
+    </div>
+
+    <nav>
+        <div class="menu-toggle" onclick="toggleMenu()"><i class="fa-solid fa-bars-staggered"></i></div>
+        <div class="logo">FollBooster</div>
+        <div class="role-badge role-free" id="roleDisplay" onclick="window.location.href='index.html#secUpgrade'">
+            <span id="roleText">LOADING...</span>
+            <i id="roleIcon" class="fa-solid fa-circle-notch fa-spin"></i>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h3><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> Layanan Gratis</h3>
+            <select id="serviceType">
+                <option value="TikTok Followers">TikTok Followers</option>
+                <option value="TikTok Followers">TikTok View</option>
+                <option value="TikTok Followers">TikTok Like</option>
+                <option value="Instagram Followers">Instagram Followers</option>
+                <option value="Instagram Followers">Instagram View</option>
+                <option value="Instagram Followers">Instagram Like</option>
+                <option value="Instagram Followers">Instagram Save</option>
+                <option value="YouTube Subs">YouTube Subscribers</option>
+                <option value="Instagram Followers">Telegram Member</option>
+            </select>
+            <input type="text" id="targetLink" placeholder="Masukkan Username atau Link">
+            
+            <div class="warning-box">
+                <strong>💡 INFORMASI PENTING:</strong><br>
+                • Akun tidak boleh dalam keadaan diproteksi/private.<br>
+                • Jangan melakukan spam pesanan, tunggu hingga status SELESAI.<br>
+                • Sistem bekerja otomatis, pastikan data yang diinput benar.
+            </div>
+
+            <button class="btn-send" id="btnSubmit" onclick="submitOrder()">
+                <span id="btnText">Kirim Followers</span>
+                <div class="loading-spinner" id="loader"></div>
+            </button>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-receipt" style="color: var(--primary);"></i> Status Pesanan</h3>
+            <table class="status-table">
+                <thead>
+                    <tr>
+                        <th>Layanan</th>
+                        <th>Target</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="orderLogs">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="successModal">
+        <div class="popup-card">
+            <i class="fa-solid fa-crown" style="font-size: 50px; color: var(--gold); margin-bottom: 20px;"></i>
+            <h2>Pesanan Berhasil!</h2>
+            <p style="font-size: 13px; color: var(--sub-text); margin: 15px 0 25px;">
+                Followers sedang dikirim. Jangan melakukan spam pesanan berulang kali agar proses lancar!
+            </p>
+            <button onclick="document.getElementById('successModal').style.display='none'" style="width: 100%; padding: 12px; background: var(--text); color: white; border-radius: 15px; border: none; font-weight: 700;">Oke, Mengerti</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIG KAMU BUJANG!
+        const firebaseConfig = {
+            apiKey: "AIzaSyBClYBiQ3Z0q4_rbsGPyi-hDz5gn6NU4GI",
+            authDomain: "follbooster.firebaseapp.com",
+            databaseURL: "https://follbooster-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "follbooster",
+            storageBucket: "follbooster.firebasestorage.app",
+            messagingSenderId: "199636680075",
+            appId: "1:199636680075:web:f306267423dd6e955ec38e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // 1. CEK STATUS LOGIN & ROLE USER
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const userRef = ref(db, 'users/' + user.uid);
+                onValue(userRef, (snapshot) => {
+                    const data = snapshot.val();
+                    const roleBadge = document.getElementById('roleDisplay');
+                    const roleText = document.getElementById('roleText');
+                    const roleIcon = document.getElementById('roleIcon');
+
+                    // DETEKSI ROLE DARI FIREBASE
+                    if (data && data.role === "pro") {
+                        roleBadge.className = "role-badge role-pro";
+                        roleText.innerText = "PRO MEMBER";
+                        roleIcon.className = "fa-solid fa-crown";
+                    } else {
+                        roleBadge.className = "role-badge role-free";
+                        roleText.innerText = "FREE USER";
+                        roleIcon.className = "fa-solid fa-arrow-up";
+                    }
+
+                    // MUAT RIWAYAT PESANAN
+                    loadOrders(user.uid);
+                });
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // 2. FUNGSI KIRIM PESANAN KE FIREBASE
+        window.submitOrder = () => {
+            const user = auth.currentUser;
+            const target = document.getElementById('targetLink').value;
+            const service = document.getElementById('serviceType').value;
+
+            if (!target) return alert("Isi targetnya dulu Bujang!");
+
+            // Animasi Loading
+            const btn = document.getElementById('btnSubmit');
+            document.getElementById('btnText').innerText = "Sedang Memproses...";
+            document.getElementById('loader').style.display = "block";
+            btn.disabled = true;
+
+            // Simulasi proses 8 detik biar keliatan real
+            setTimeout(() => {
+                const orderRef = ref(db, 'users/' + user.uid + '/orders');
+                const newOrderRef = push(orderRef);
+                set(newOrderRef, {
+                    service: service,
+                    target: target,
+                    status: "Diproses",
+                    timestamp: Date.now()
+                });
+
+                // Reset UI
+                btn.disabled = false;
+                document.getElementById('btnText').innerText = "Kirim Followers";
+                document.getElementById('loader').style.display = "none";
+                document.getElementById('targetLink').value = "";
+                document.getElementById('successModal').style.display = "flex";
+            }, 8000);
+        };
+
+        // 3. FUNGSI LOAD ORDER DARI FIREBASE
+        function loadOrders(uid) {
+            const orderRef = ref(db, 'users/' + uid + '/orders');
+            onValue(orderRef, (snapshot) => {
+                const logs = document.getElementById('orderLogs');
+                logs.innerHTML = "";
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    const row = `<tr>
+                        <td>${data.service}</td>
+                        <td>${data.target}</td>
+                        <td><span class="badge ${data.status === 'Selesai' ? 'badge-success' : 'badge-process'}">${data.status}</span></td>
+                    </tr>`;
+                    logs.innerHTML = row + logs.innerHTML;
+                });
+            });
+        }
+
+        // LOGOUT
+        window.logout = () => {
+            signOut(auth).then(() => window.location.href = 'login.html');
+        };
+
+        // MENU TOGGLE
+        window.toggleMenu = () => {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        };
+    </script>
+</body>
+</html>

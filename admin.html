@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Admin | FollBooster</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --gold: #f59e0b;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: #1e293b; padding: 20px; }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* HEADER & STATS */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header h1 { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+
+        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-box { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: center; }
+        .stat-box span { font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; }
+        .stat-box h2 { font-size: 2rem; color: var(--primary); margin-top: 5px; }
+
+        /* TABLE AREA */
+        .table-card { background: var(--white); border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.04); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f1f5f9; }
+        th { padding: 15px; text-align: left; font-size: 12px; color: #64748b; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+
+        /* ROLE BADGE */
+        .badge { padding: 5px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; }
+        .badge-free { background: #e2e8f0; color: #475569; }
+        .badge-pro { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+
+        /* ACTIONS */
+        .btn-action { width: 35px; height: 35px; border-radius: 10px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-upgrade { background: #e0e7ff; color: var(--primary); }
+        .btn-delete { background: #fee2e2; color: var(--danger); }
+        .btn-action:hover { transform: scale(1.1); }
+
+        /* NOTIF */
+        #toast {
+            position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white;
+            padding: 12px 25px; border-radius: 12px; display: none; z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Berhasil diupdate!</div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Panel Admin Real-time</h1>
+            <a href="dashboard.html" style="text-decoration:none; font-size:12px; font-weight:700; color:var(--primary)">Ke Dashboard <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-box">
+                <span>Total User</span>
+                <h2 id="totalUsers">0</h2>
+            </div>
+            <div class="stat-box">
+                <span>User PRO</span>
+                <h2 id="proUsers">0</h2>
+            </div>
+            <div class="stat-box">
+                <span>User Online</span>
+                <h2 id="onlineUsers" style="color: #10b981;">0</h2>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>PENGGUNA</th>
+                        <th>ROLE</th>
+                        <th>TERAKHIR AKTIF</th>
+                        <th>AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="userList">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIG KAMU BUJANG!
+        const firebaseConfig = {
+            apiKey: "AIzaSyBClYBiQ3Z0q4_rbsGPyi-hDz5gn6NU4GI",
+            authDomain: "follbooster.firebaseapp.com",
+            databaseURL: "https://follbooster-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "follbooster",
+            storageBucket: "follbooster.firebasestorage.app",
+            messagingSenderId: "199636680075",
+            appId: "1:199636680075:web:f306267423dd6e955ec38e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const toast = document.getElementById('toast');
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+
+        // --- FITUR REAL-TIME UTAMA ---
+        const usersRef = ref(db, 'users');
+        onValue(usersRef, (snapshot) => {
+            const list = document.getElementById('userList');
+            list.innerHTML = ""; // Reset tabel setiap ada perubahan data
+            
+            let total = 0;
+            let pro = 0;
+
+            snapshot.forEach((child) => {
+                const user = child.val();
+                const uid = child.key;
+                total++;
+                if(user.role === 'pro') pro++;
+
+                const row = `
+                    <tr>
+                        <td>
+                            <div style="font-weight:700">${user.email || 'Anonim'}</div>
+                            <div style="font-size:10px; color:#94a3b8">${uid}</div>
+                        </td>
+                        <td>
+                            <span class="badge ${user.role === 'pro' ? 'badge-pro' : 'badge-free'}">
+                                ${user.role === 'pro' ? '<i class="fa-solid fa-crown"></i> PRO' : 'FREE'}
+                            </span>
+                        </td>
+                        <td style="font-size:12px; color:#64748b">
+                            ${user.lastActive ? new Date(user.lastActive).toLocaleString('id-ID') : 'Baru saja'}
+                        </td>
+                        <td>
+                            <button class="btn-action btn-upgrade" onclick="changeRole('${uid}', '${user.role}')">
+                                <i class="fa-solid fa-sync"></i>
+                            </button>
+                            <button class="btn-action btn-delete" onclick="hapusUser('${uid}')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                list.innerHTML += row;
+            });
+
+            document.getElementById('totalUsers').innerText = total;
+            document.getElementById('proUsers').innerText = pro;
+            document.getElementById('onlineUsers').innerText = Math.floor(total * 0.3); // Simulasi
+        });
+
+        // --- FUNGSI UPGRADE/DOWNGRADE ---
+        window.changeRole = (uid, currentRole) => {
+            const nextRole = currentRole === 'pro' ? 'free' : 'pro';
+            update(ref(db, 'users/' + uid), { role: nextRole })
+            .then(() => showToast("Role User Berhasil Diubah!"));
+        };
+
+        // --- FUNGSI HAPUS ---
+        window.hapusUser = (uid) => {
+            if(confirm("Hapus user ini selamanya, Bujang?")) {
+                remove(ref(db, 'users/' + uid))
+                .then(() => showToast("User Dihapus!"));
+            }
+        };
+    </script>
+</body>
+</html>

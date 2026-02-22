@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat - FollBooster</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0064D2;
+            --bg: #F4F7FA;
+            --white: #ffffff;
+            --text-main: #1A1A1A;
+            --text-sub: #707070;
+            --chat-bg: #EBF4FF;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+
+        .app-container {
+            width: 100%;
+            max-width: 510px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* --- Tampilan Antrian --- */
+        #waiting-screen {
+            position: absolute;
+            inset: 0;
+            background: white;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .queue-box {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 25px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .queue-number {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .timer-circle {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #eee;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- Tampilan Chat --- */
+        .chat-header {
+            padding: 15px 20px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .cs-status {
+            width: 10px;
+            height: 10px;
+            background: #27ae60;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        #chat-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #F8F9FB;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
+        .msg-bot { background: var(--white); color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .msg-user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 25px;
+            border: 1px solid #ddd;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div id="waiting-screen">
+        <div class="timer-circle"></div>
+        <div class="queue-box">
+            <p style="font-size: 14px; color: var(--text-sub);">Nomor Antrian Anda</p>
+            <div class="queue-number" id="q-num">--</div>
+            <p style="font-size: 13px; font-weight: 700;">Mohon tunggu sebentar...</p>
+        </div>
+        <h2 style="font-size: 18px; margin-bottom: 10px;">Menghubungkan ke Customer Service</h2>
+        <p style="color: var(--text-sub); font-size: 14px;"> <span id="timer"></span></p>
+    </div>
+
+    <div class="chat-header">
+        <a href="javascript:history.back()" style="color: white;"><i class="fas fa-chevron-left"></i></a>
+        <div style="position: relative;">
+            <img src="https://files.catbox.moe/ld0vet.png" style="width: 40px; height: 40px; border-radius: 50%;">
+            <div class="cs-status" style="position: absolute; bottom: 0; right: 0;"></div>
+        </div>
+        <div>
+            <h4 style="font-size: 15px;">CS FollBooster</h4>
+            <p style="font-size: 11px; opacity: 0.8;">Online • Siap membantu</p>
+        </div>
+    </div>
+
+    <div id="chat-content">
+        </div>
+
+    <div class="chat-input-area">
+        <button style="border: none; background: none; color: #999; font-size: 20px;"><i class="fas fa-plus-circle"></i></button>
+        <input type="text" id="userInput" placeholder="Ketik pesan..." onkeypress="handleKey(event)">
+        <button class="send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<script>
+    // 1. Logika Antrian
+    let timeLeft = 10; // 1 Menit
+    const qNum = Math.floor(Math.random() * 50) + 1;
+    document.getElementById('q-num').innerText = "#" + qNum;
+
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        let min = Math.floor(timeLeft / 60);
+        let sec = timeLeft % 60;
+        document.getElementById('timer').innerText = `0${min}:${sec < 10 ? '0'+sec : sec}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            startChat();
+        }
+    }, 1000);
+
+    // 2. Transisi ke Chat & Pesan Otomatis
+    function startChat() {
+        // Hilangkan layar tunggu
+        document.getElementById('waiting-screen').style.display = 'none';
+        
+        // Tampilkan pesan sambutan otomatis
+        const chatContent = document.getElementById('chat-content');
+        const welcomeMsg = document.createElement('div');
+        welcomeMsg.className = 'msg msg-bot';
+        welcomeMsg.innerHTML = `Halo! Terima kasih telah menunggu. Saya <b>Kayla</b> dari Customer Service FollBooster. Ada yang bisa kami bantu terkait kendala Anda?`;
+        chatContent.appendChild(welcomeMsg);
+    }
+
+    // 3. Logika Kirim Pesan User
+    function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        
+        if (text !== "") {
+            const chatContent = document.getElementById('chat-content');
+            
+            // Pesan User
+            const userMsg = document.createElement('div');
+            userMsg.className = 'msg msg-user';
+            userMsg.innerText = text;
+            chatContent.appendChild(userMsg);
+            
+            input.value = "";
+            chatContent.scrollTop = chatContent.scrollHeight;
+        }
+    }
+
+    function handleKey(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+</script>
+
+</body>
+</html>
